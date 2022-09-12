@@ -1,0 +1,278 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS Cognito Stack with User Pool, Identity Pool, IAM roles (authenticated / unauthenticated), Trust Policies and an app client.
+
+#################################################################
+########################### Parameters ##########################
+#################################################################
+
+Parameters:
+  IdentityPoolName:
+    Type: String
+    Description: Name of the identity pool
+  AllowUnauthenticatedIdentities:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+  UserPoolName:
+    Type: String
+    Description: Name of the user pool
+  AutoVerifiedAttributes:
+    Type: String
+    Description: AutoVerifiedAttributes Like em
+    Default: email
+  MfaConfiguration:
+    Type: String
+    Default: "OFF"
+  DeveloperProviderName:
+    Type: String
+    Description: Name of the developer provider
+  UnauthRoleName:
+    Type: String
+    Description: Unauth role name
+  AuthRoleName:
+    Type: String
+    Description: Auth role name
+  AppClientName:
+    Type: String
+    Description: The app Client Name
+  GenerateSecret:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+  Environment:
+    Type: String
+
+############### UserPool Lambda Trigger Parameters ########## 
+  
+  PostConfirmation:
+    Type: String
+    Description: Lambda ARN for PostConfirmation
+    Default: ""
+  PreSignUp:
+    Type: String
+    Description: Lambda ARN for PreSignUp
+    Default: ""
+  PreAuthentication:
+    Type: String
+    Description: Lambda ARN for PreAuthentication
+    Default: ""
+  PostAuthentication:
+    Type: String
+    Description: Lambda ARN for PostAuthentication
+    Default: ""
+  CustomSMSSender:
+    Type: String
+    Description: Lambda ARN for CustomSMSSender
+    Default: ""
+  CustomMessage:
+    Type: String
+    Description: Lambda ARN for CustomMessage
+    Default: ""
+  CustomEmailSender:
+    Type: String
+    Description: Lambda ARN for CustomEmailSender
+    Default: ""
+  CreateAuthChallenge:
+    Type: String
+    Description: Lambda ARN for CreateAuthChallenge
+    Default: ""
+  DomainName:
+    Type: String
+    Default: ""
+  CertificateArn:
+    Type: String
+    Default: ""
+
+
+#################################################################
+########################### Conditions ###########################
+#################################################################
+
+Conditions:
+  PostConfirmation: !Not [!Equals [!Ref PostConfirmation, '']]
+  PreSignUp: !Not [!Equals [!Ref PreSignUp, '']]
+  PreAuthentication: !Not [!Equals [!Ref PreAuthentication, '']]
+  PostAuthentication: !Not [!Equals [!Ref PostAuthentication, '']]
+  CustomSMSSender: !Not [!Equals [!Ref CustomSMSSender, '']]
+  CustomMessage: !Not [!Equals [!Ref CustomMessage, '']]
+  CustomEmailSender: !Not [!Equals [!Ref CustomEmailSender, '']]
+  CreateAuthChallenge: !Not [!Equals [!Ref CreateAuthChallenge, '']]
+  HasDomain: !Not [!Equals [!Ref DomainName, '']]
+  HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
+
+
+#################################################################
+########################### Resources ###########################
+#################################################################
+
+Resources:
+  IdentityPool:
+    Type: "AWS::Cognito::IdentityPool"
+    Properties:
+      IdentityPoolName: !Ref IdentityPoolName
+      AllowUnauthenticatedIdentities: !Ref AllowUnauthenticatedIdentities
+      DeveloperProviderName: !Ref DeveloperProviderName
+      CognitoIdentityProviders:
+        - ClientId: !Ref UserPoolClient
+          ProviderName:
+            !Join [
+              "",
+              ["cognito-idp.",!Ref "AWS::Region", ".amazonaws.com/", !Ref UserPool],
+            ]
+
+  UserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      AutoVerifiedAttributes:
+        - !Ref AutoVerifiedAttributes
+      MfaConfiguration: !Ref MfaConfiguration
+      UsernameConfiguration:
+         CaseSensitive: False
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+          - Name: verified_phone_number
+            Priority: 2
+      # UsernameAttributes: ["email"]
+      Policies:
+        PasswordPolicy:
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireUppercase: true
+          MinimumLength: 8
+          RequireSymbols: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+          AttributeDataType: String
+      UserPoolName: !Ref UserPoolName
+      LambdaConfig:
+        PostConfirmation: !If [PostConfirmation, !Ref PostConfirmation , !Ref 'AWS::NoValue']
+        PreSignUp: !If [PreSignUp, !Ref PreSignUp , !Ref 'AWS::NoValue']
+        PreAuthentication: !If [PreAuthentication, !Ref PreAuthentication , !Ref 'AWS::NoValue']
+        PostAuthentication: !If [PostAuthentication, !Ref PostAuthentication , !Ref 'AWS::NoValue']
+        CustomSMSSender:  !If [CustomSMSSender, { LambdaArn: !Ref CustomSMSSender } , !Ref 'AWS::NoValue']
+        CustomMessage: !If [CustomMessage, !Ref CustomMessage , !Ref 'AWS::NoValue']
+        CustomEmailSender: !If [CustomEmailSender, { LambdaArn: !Ref CustomEmailSender } , !Ref 'AWS::NoValue']
+        CreateAuthChallenge: !If [CreateAuthChallenge, !Ref CreateAuthChallenge , !Ref 'AWS::NoValue']
+
+  UnauthRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: "cognito-identity.amazonaws.com"
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: "unauthenticated"
+
+      RoleName: !Ref UnauthRoleName
+
+  UnauthRolePolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Action: ["mobileanalytics:PutEvents", "cognito-sync:*"]
+            Resource: "*"
+      PolicyName: CognitoPolicy
+      Roles:
+        - !Ref UnauthRole
+
+  AuthRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: "cognito-identity.amazonaws.com"
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: "authenticated"
+
+      RoleName: !Ref AuthRoleName
+
+  AuthRolePolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Action:
+              [
+                "mobileanalytics:PutEvents",
+                "cognito-sync:*",
+                "cognito-identity:*",
+              ]
+            Resource: "*"
+      PolicyName: CognitoPolicy
+      Roles:
+        - !Ref AuthRole
+
+  UserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+      ClientName: !Ref AppClientName
+      GenerateSecret: !Ref GenerateSecret
+      AllowedOAuthFlows: []
+      UserPoolId: !Ref UserPool
+      SupportedIdentityProviders: ["COGNITO"]
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows: ["ALLOW_CUSTOM_AUTH","ALLOW_USER_PASSWORD_AUTH","ALLOW_USER_SRP_AUTH","ALLOW_REFRESH_TOKEN_AUTH"]
+      
+  IdentityPoolRoleMapping:
+    Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt AuthRole.Arn
+        unauthenticated: !GetAtt UnauthRole.Arn
+
+  UserPoolDomain: 
+    Type: AWS::Cognito::UserPoolDomain 
+    Condition:  HasDomain
+    Properties:
+      UserPoolId: !Ref UserPool 
+      Domain: !Ref DomainName
+      CustomDomainConfig:  !If [HasCertificateArn,{CertificateArn: !Ref CertificateArn}, !Ref 'AWS::NoValue']
+
+
+
+#################################################################
+########################### Outputs #############################
+#################################################################
+
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: "UserPoolId"
+  AppClientName:
+    Value: !Ref AppClientName
+    Export:
+      Name: "AppClientName"
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+    Export:
+      Name: "UserPoolClientId"
+  IdentityPoolId:
+    Value: !Ref IdentityPool
+    Export:
+      Name: "IdentityPoolId"
+  CognitoUserPoolArn:
+    Value: !GetAtt  UserPool.Arn
