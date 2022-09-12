@@ -228,7 +228,7 @@ Resources:
     Properties:
       ClientName: !Ref AppClientName
       GenerateSecret: !Ref GenerateSecret
-      AllowedOAuthFlows: []
+      AllowedOAuthFlows: ["client_credentials"]
       UserPoolId: !Ref UserPool
       SupportedIdentityProviders: ["COGNITO"]
       PreventUserExistenceErrors: ENABLED

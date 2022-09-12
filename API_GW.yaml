@@ -80,7 +80,7 @@ Resources:
     Type: AWS::Cognito::UserPoolResourceServer
     Properties: 
       UserPoolId: !Ref UserPoolId 
-      Identifier: !Sub https://{APIGateway}.execute-api.{AWS::Region}.amazonaws.com
+      Identifier: !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com
       Name: "Name" 
       Scopes: 
       - ScopeName: "accela.interface" 
