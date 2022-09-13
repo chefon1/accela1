@@ -31,7 +31,7 @@ Resources:
             Action:
               - sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
       Policies:
         - PolicyName: !Sub ${Environment}-S3Policy
           PolicyDocument:
