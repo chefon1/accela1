@@ -375,7 +375,7 @@ Resources:
       ResourceId: !Ref InputResource
       AuthorizationType: COGNITO_USER_POOLS
       AuthorizationScopes: 
-        - {"Fn::Join": ["", ["https://",{"Ref": "APIGateway"},".execute-api.","amazonaws.com/",{"Ref": "Environment"},"/accela.interface"]]}
+        - !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/accela.interface
       AuthorizerId: !Ref Authorizer
       MethodResponses: 
         - StatusCode: 200
@@ -396,7 +396,7 @@ Resources:
       ResourceId: !Ref ArchiveResource
       AuthorizationType: COGNITO_USER_POOLS
       AuthorizationScopes: 
-        - {"Fn::Join": ["", ["https://",{"Ref": "APIGateway"},".execute-api.","amazonaws.com/",{"Ref": "Environment"},"/accela.interface"]]}
+        - !Sub https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/accela.interface
       AuthorizerId: !Ref Authorizer
       HttpMethod: ANY
       Integration:
