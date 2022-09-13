@@ -52,7 +52,6 @@ Parameters:
     AllowedValues:
       - True
       - False
-
   DomainName:
     Type: String
     Description: Domain name for cognito user pool Domain
@@ -75,12 +74,14 @@ Parameters:
 #################################################################
 
 Resources:
-  Cognito:
+  APICognito:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://s3.amazonaws.com/${BucketPath}/Cognito.yaml
       Parameters:
         IdentityPoolName: !Sub ${Environment}-IdentityPool
+        ApiEndpointType: EDGE
+        APIGatewayName: !Sub ${Environment}-APIGateway
         AllowUnauthenticatedIdentities: !Ref AllowUnauthenticatedIdentities
         UserPoolName: !Sub ${Environment}-UserPool
         AutoVerifiedAttributes: !Ref AutoVerifiedAttributes
@@ -91,6 +92,10 @@ Resources:
         AppClientName: !Ref AppClientName
         GenerateSecret: !Ref GenerateSecret
         Environment: !Ref Environment
+        LambdaOneName: !GetAtt Lambda.Outputs.LambdaOneName
+        LambdaTwoName: !GetAtt Lambda.Outputs.LambdaTwoName
+        LambdaOneArn: !GetAtt Lambda.Outputs.LambdaOneArn
+        LambdaTwoArn: !GetAtt Lambda.Outputs.LambdaTwoArn
         DomainName: !Ref DomainName
         CertificateArn: !Ref CertificateArn
 
@@ -102,70 +107,3 @@ Resources:
       Parameters:
         Environment: !Ref Environment
         
-
-  APIGateway:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://s3.amazonaws.com/${BucketPath}/API_GW.yaml
-      Parameters:
-        APIGatewayName: !Sub ${Environment}-APIGateway
-        Environment: !Ref Environment
-        ApiEndpointType: EDGE
-        LambdaOneName: !GetAtt Lambda.Outputs.LambdaOneName
-        LambdaTwoName: !GetAtt Lambda.Outputs.LambdaTwoName
-        LambdaOneArn: !GetAtt Lambda.Outputs.LambdaOneArn
-        LambdaTwoArn: !GetAtt Lambda.Outputs.LambdaTwoArn
-        UserPoolArn: !GetAtt Cognito.Outputs.CognitoUserPoolArn
-        UserPoolId: !GetAtt Cognito.Outputs.UserPoolId
-
-
-#################################################################
-########################### Outputs #############################
-#################################################################
-
-Outputs:
-
-
-  # BucketARN:
-  #   Value: !GetAtt S3Bucket.Outputs.S3BucketARN
-  #   Description: S3 Bucket ARN
-  # BucketName:
-  #   Value: !GetAtt S3Bucket.Outputs.S3BucketName
-  #   Description: S3 Bucket Name
-  #   Export:
-  #     Name:
-  #       Fn::Sub: "${Environment}-USER-IMAGE-BUCKET"
-
-
-  APIGatewayID:
-    Value: !GetAtt APIGateway.Outputs.APIGatewayID
-    Description: RestAPI Id of API Gatway
-    Export:
-      Name:
-        Fn::Sub: "${Environment}-REST-API-ID"
-
-  APIGatewayRootID:
-    Value: !GetAtt APIGateway.Outputs.APIGatewayRootID
-    Description: RootResourceId  of API Gatway
-    Export:
-      Name:
-        Fn::Sub: "${Environment}-REST-API-ROOT-ID"
-
-  UserPoolId:
-    Value: !GetAtt Cognito.Outputs.UserPoolId
-    Description: Cognito UserPoolId
-  AppClientName:
-    Value: !GetAtt Cognito.Outputs.AppClientName
-    Description: Cognito AppClientName
-  UserPoolClientId:
-    Value: !GetAtt Cognito.Outputs.UserPoolClientId
-    Description: Cognito UserPoolClientId
-  IdentityPoolId:
-    Value: !GetAtt Cognito.Outputs.IdentityPoolId
-    Description: Cognito IdentityPoolId
-  COGNITOARN:
-    Value: !GetAtt Cognito.Outputs.CognitoUserPoolArn
-    Description: COGNITO_ARN
-    Export:
-      Name:
-        Fn::Sub: "${Environment}-COGNITO-ARN"
