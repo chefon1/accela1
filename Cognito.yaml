@@ -334,8 +334,9 @@ Resources:
       Tags:
         - Key: Environment
           Value: !Ref Environment
-      Parameters:
-          endpointConfigurationTypes: REGIONAL
+      EndpointConfiguration: 
+        Types:
+          - REGIONAL
 
   InputResource:
     Type: 'AWS::ApiGateway::Resource'
