@@ -10,13 +10,6 @@ Parameters:
   APIGatewayName:
     Type: String
     Description: Name of the API
-  ApiEndpointType:
-    Type: String
-    Description: "ApiEndpointType"
-    AllowedValues:
-      - REGIONAL
-      - PRIVATE
-      - EDGE
   LambdaOneName:
     Type: String
   LambdaTwoName:
@@ -258,7 +251,7 @@ Resources:
       UserPoolId: !Ref UserPool
       SupportedIdentityProviders: ["COGNITO"]
       PreventUserExistenceErrors: ENABLED
-      ExplicitAuthFlows: ["ALLOW_CUSTOM_AUTH","ALLOW_USER_PASSWORD_AUTH","ALLOW_USER_SRP_AUTH","ALLOW_REFRESH_TOKEN_AUTH"]
+      ExplicitAuthFlows: ["ALLOW_CUSTOM_AUTH","ALLOW_USER_SRP_AUTH","ALLOW_REFRESH_TOKEN_AUTH"]
       
   IdentityPoolRoleMapping:
     Type: "AWS::Cognito::IdentityPoolRoleAttachment"
@@ -342,7 +335,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
       Parameters:
-          endpointConfigurationTypes: !Ref ApiEndpointType
+          endpointConfigurationTypes: REGIONAL
 
   InputResource:
     Type: 'AWS::ApiGateway::Resource'

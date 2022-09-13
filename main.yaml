@@ -80,7 +80,7 @@ Resources:
       TemplateURL: !Sub https://s3.amazonaws.com/${BucketPath}/Cognito.yaml
       Parameters:
         IdentityPoolName: !Sub ${Environment}-IdentityPool
-        ApiEndpointType: EDGE
+        ApiEndpointType: REGIONAL
         APIGatewayName: !Sub ${Environment}-APIGateway
         AllowUnauthenticatedIdentities: !Ref AllowUnauthenticatedIdentities
         UserPoolName: !Sub ${Environment}-UserPool
