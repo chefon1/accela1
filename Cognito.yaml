@@ -243,6 +243,7 @@ Resources:
     Properties:
       ClientName: !Ref AppClientName
       GenerateSecret: !Ref GenerateSecret
+      AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows: 
         - "client_credentials"
       AllowedOAuthScopes:
