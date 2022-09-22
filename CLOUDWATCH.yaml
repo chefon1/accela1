@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:  CloudWatch Alarm
+
+
+#################################################################
+########################### Parameters ##########################
+#################################################################
+
+Parameters:
+  SNSArn:
+    Type: String
+  DistributionId:
+    Type: String
+  Threshold:
+    Type: Number
+    Default: 20
+  ComparisonOperator:
+    Type: String
+    Default: GreaterThanThreshold
+  Period:
+    Type: Number
+    Default: 60
+  EvaluationPeriods:
+    Type: Number
+    Default: 1
+#################################################################
+########################### Resources ###########################
+#################################################################
+
+
+Resources:
+  Alarm4xx:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - !Ref SNSArn
+      AlarmDescription: 'Alarm4xx'
+      ComparisonOperator: !Ref ComparisonOperator
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref DistributionId
+      EvaluationPeriods: !Ref EvaluationPeriods
+      MetricName: 4xxErrorRate
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - !Ref SNSArn
+      Period: !Ref Period
+      Statistic: Average
+      Threshold: !Ref Threshold
+      TreatMissingData: notBreaching
+
+  Alarm5xx:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - !Ref SNSArn
+      AlarmDescription: 'Alarm5xx'
+      ComparisonOperator: !Ref ComparisonOperator
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref DistributionId
+      EvaluationPeriods: !Ref EvaluationPeriods
+      MetricName: 5xxErrorRate
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - !Ref SNSArn
+      Period: !Ref Period
+      Statistic: Average
+      Threshold: !Ref Threshold
+      TreatMissingData: notBreaching
